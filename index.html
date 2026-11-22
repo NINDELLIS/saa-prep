@@ -56,7 +56,7 @@ a{color:var(--d1)}
 const QB = window.QB||[], CARDS = window.CARDS||[], EPS = window.EPISODES||[];
 const DN = {1:"Secure",2:"Resilient",3:"High-Performing",4:"Cost-Optimized"}, DW={1:30,2:26,3:24,4:20};
 const S = Object.assign({exam:"2026-12-19",tasks:{},qs:{},cards:{},exams:[],eps:{},vids:{},admin:{}}, JSON.parse(localStorage.getItem("saa")||"{}"));
-const save=()=>localStorage.setItem("saa",JSON.stringify(S));
+const save=()=>{localStorage.setItem("saa",JSON.stringify(S));if(window.syncSoon)syncSoon()};
 const today=()=>new Date().toISOString().slice(0,10);
 const $=s=>document.querySelector(s), esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"})[c]);
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -66,7 +66,7 @@ if(!TABS[tab])tab="plan";
 const DL=window.DAYLINKS||{};const EPF=n=>EPS.find(e=>e.file=="ep"+n+".mp3");
 function nav(){$("#nav").innerHTML=Object.entries(TABS).map(([k,v])=>`<button class="${k==tab?'on':''}" onclick="go('${k}')">${v}</button>`).join("");
   const d=Math.ceil((new Date(S.exam)-new Date(today()))/864e5);
-  $("#cd").innerHTML=`Prüfung ${new Date(S.exam).toLocaleDateString("de-DE")}<br><b>${d>=0?d+" Tage":"vorbei"}</b>`}
+  $("#cd").innerHTML=(tok()?`<span id="syncst" class="small">${lastSync?"✓ "+esc(lastSync.slice(-8,-3)):"Sync an"}</span><br>`:"")+`Prüfung ${new Date(S.exam).toLocaleDateString("de-DE")}<br><b>${d>=0?d+" Tage":"vorbei"}</b>`}
 function go(t){tab=t;location.hash=t;clearInterval(window._tm);render()}
 function render(){nav();({plan,vid,quiz,exam,cards,pod,weak,stats})[tab]()}
 
@@ -82,7 +82,7 @@ function plan(){const all=PLAN.flatMap(w=>w.days.flatMap(d=>d.tasks));const done
    <div class="card kpi"><div class="v">${done}/${all.length}</div><div class="l">Plan-Aufgaben erledigt</div><div class="bar"><i style="width:${100*done/all.length}%"></i></div></div>
    <div class="card kpi"><div class="v">${readiness()} %</div><div class="l">Readiness-Score (Ziel ≥ 80 %)</div><div class="bar"><i style="width:${readiness()}%"></i></div></div>
    <div class="card kpi"><div class="v">${qStats().seen}/${QB.length}</div><div class="l">Fragen bearbeitet · Trefferquote ${qStats().acc} %</div></div>
-   <div class="card kpi"><div class="l">Prüfungstermin</div><input type="date" value="${S.exam}" onchange="S.exam=this.value;save();render()"><div class="l small">Nach der Buchung bei Pearson VUE eintragen</div></div></div>`;
+   <div class="card kpi"><div class="l">Prüfungstermin</div><input type="date" value="${S.exam}" onchange="S.exam=this.value;S.examTs=Date.now();save();render()"><div class="l small">Nach der Buchung bei Pearson VUE eintragen</div></div></div>`;
   h+=nextUp()+adminCard();
   for(const w of PLAN){const now=t>=w.from&&t<=w.to;h+=`<div class="card week ${now?'now':''}"><h2>Woche ${w.week}: ${w.title}</h2><div class="mut small">${fmt(w.from)} – ${fmt(w.to)}</div>`;
     for(const d of w.days){h+=`<div class="day ${d.date==t?'today':''}"><div class="dt">${new Date(d.date).toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"})}${d.date==t?' · HEUTE':''}</div>`+
@@ -219,13 +219,47 @@ function weak(){const w=QB.filter(q=>S.qs[q.id]&&S.qs[q.id].last===false);const 
   $("#main").innerHTML=`<div class="card"><h2>Schwächste Themen</h2>${rows.length?`<table>${rows.map(([t,v,p])=>`<tr><td><span class="d${v.d}">D${v.d}</span> ${esc(t)}</td><td style="width:50%"><div class="bar"><i style="width:${p}%;background:${p<60?'var(--bad)':p<80?'var(--acc)':'var(--ok)'}"></i></div></td><td>${p} %</td></tr>`).join("")}</table>`:'<p class="mut">Noch keine Daten.</p>'}</div>
    <div class="card"><h2>Zuletzt falsch: ${w.length} Fragen</h2><button class="btn" ${w.length?'':'disabled'} onclick="Z={mode:'quiz',list:shuffle(QB.filter(q=>S.qs[q.id]&&S.qs[q.id].last===false)).map(q=>({q,order:shuffle(q.options.map((_,i)=>i))})),i:0,sel:[],done:false,ok:0};tab='quiz';location.hash='quiz';nav();quizQ()">Alle wiederholen</button></div>`}
 
+/* ---------- SYNC (privates GitHub Gist) ---------- */
+const GH="https://api.github.com",GDESC="saa-prep-progress",GFILE="saa-progress.json";
+let syncT=null,syncing=false,lastSync=localStorage.getItem("saa_last")||"";
+const tok=()=>localStorage.getItem("saa_token")||"";
+window.syncSoon=()=>{if(!tok())return;clearTimeout(syncT);syncT=setTimeout(syncNow,2500)};
+async function gh(path,opt={}){const r=await fetch(GH+path,{...opt,headers:{Authorization:"Bearer "+tok(),Accept:"application/vnd.github+json",...(opt.body?{"Content-Type":"application/json"}:{})}});if(!r.ok)throw new Error("GitHub "+r.status);return r.json()}
+async function gistId(){let id=localStorage.getItem("saa_gist");if(id)return id;
+  for(let pg=1;pg<=3;pg++){const l=await gh("/gists?per_page=100&page="+pg);const g=l.find(x=>x.description==GDESC);if(g){id=g.id;break}if(l.length<100)break}
+  if(!id){const g=await gh("/gists",{method:"POST",body:JSON.stringify({description:GDESC,public:false,files:{[GFILE]:{content:"{}"}}})});id=g.id}
+  localStorage.setItem("saa_gist",id);return id}
+function merge(a,b){const o=JSON.parse(JSON.stringify(a));
+  for(const k of ["tasks","admin","vids","eps"]){o[k]=Object.assign({},b[k]||{},a[k]||{});for(const x in b[k]||{})if(b[k][x])o[k][x]=true}
+  o.qs={...(b.qs||{})};for(const id in a.qs||{}){const x=a.qs[id],y=o.qs[id];if(!y||x.n>=y.n)o.qs[id]=x}
+  o.cards={...(b.cards||{})};for(const id in a.cards||{}){const x=a.cards[id],y=o.cards[id];if(!y||(x.due||"")>=(y.due||""))o.cards[id]=x}
+  const ex={};[...(b.exams||[]),...(a.exams||[])].forEach(e=>ex[e.t]=e);o.exams=Object.values(ex).sort((x,y)=>x.t-y.t);
+  if((b.examTs||0)>(a.examTs||0)){o.exam=b.exam;o.examTs=b.examTs}
+  if(b.esl&&!a.esl)o.esl=b.esl;return o}
+async function syncNow(){if(!tok()||syncing)return;syncing=true;setSync("synchronisiere …");
+  try{const id=await gistId();const g=await gh("/gists/"+id);const remote=JSON.parse((g.files[GFILE]||{}).content||"{}");
+    const m=merge(S,remote);Object.assign(S,m);localStorage.setItem("saa",JSON.stringify(S));
+    await gh("/gists/"+id,{method:"PATCH",body:JSON.stringify({files:{[GFILE]:{content:JSON.stringify(S)}}})});
+    lastSync=new Date().toLocaleString("de-DE");localStorage.setItem("saa_last",lastSync);setSync("✓ synchron "+lastSync.slice(-8,-3));
+    if(!(tab=="exam"&&E&&!E.fin)&&!(tab=="quiz"&&Z)&&!(tab=="cards"&&F))render()}
+  catch(e){setSync("⚠ Sync-Fehler: "+e.message)}finally{syncing=false}}
+function setSync(t){const el=document.getElementById("syncst");if(el)el.textContent=t}
+function syncCard(){return `<div class="card"><h2>Sync Laptop ↔ Handy</h2>${tok()?`<p>Aktiv. <span id="syncst" class="mut">${lastSync?'zuletzt '+esc(lastSync):''}</span></p><button class="btn" onclick="syncNow()">Jetzt synchronisieren</button> <button class="btn sec" onclick="if(confirm('Sync auf diesem Gerät ausschalten?')){localStorage.removeItem('saa_token');render()}">Ausschalten</button>`:
+  `<p class="small">Fortschritt landet in einem <b>privaten</b> Gist in deinem GitHub-Account. Einmal pro Gerät einen Token eintragen (Scope nur <code>gist</code>):
+   <a href="https://github.com/settings/tokens/new?scopes=gist&description=SAA%20Lern-App%20Sync" target="_blank">Token erstellen ↗</a></p>
+   <div class="row"><input id="tokin" type="password" placeholder="ghp_…" style="flex:1;min-width:220px;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:8px">
+   <button class="btn" onclick="const v=$('#tokin').value.trim();if(!v)return;localStorage.setItem('saa_token',v);syncNow().then(render)">Speichern & syncen</button></div>
+   <p class="mut small">Der Token bleibt nur in diesem Browser gespeichert, nicht auf der Webseite.</p>`}</div>`}
+
 /* ---------- STATS ---------- */
-function stats(){$("#main").innerHTML=`<div class="card"><h2>Fortschritt je Domäne</h2><table><tr><th>Domäne</th><th>Gewicht</th><th>Abdeckung</th><th>Trefferquote</th></tr>${[1,2,3,4].map(d=>{const s=qStats(q=>q.domain==d);
+function stats(){$("#main").innerHTML=syncCard()+`<div class="card"><h2>Fortschritt je Domäne</h2><table><tr><th>Domäne</th><th>Gewicht</th><th>Abdeckung</th><th>Trefferquote</th></tr>${[1,2,3,4].map(d=>{const s=qStats(q=>q.domain==d);
    return `<tr><td class="d${d}">D${d} ${DN[d]}</td><td>${DW[d]} %</td><td>${s.seen}/${s.total}</td><td><div class="bar"><i style="width:${s.acc}%"></i></div>${s.acc} %</td></tr>`}).join("")}</table></div>
    <div class="card"><h2>Daten</h2><p class="mut small">Fortschritt liegt im Browser (localStorage). Export/Import für Gerätewechsel:</p>
    <button class="btn sec" onclick="const b=new Blob([JSON.stringify(S)]);const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='saa-progress.json';a.click()">Export</button>
    <input type="file" onchange="this.files[0].text().then(t=>{Object.assign(S,JSON.parse(t));save();render()})"></div>`}
 render();
+if(tok())setTimeout(syncNow,300);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncSoon()});
 // Deep-Links aus dem Kalender: #quiz?d=1&n=20 · #cards?n=20 · #exam?start=1 · #pod?ep=03
 if(tab=="quiz"&&Object.keys(HP).length)startQuiz(HP);
 if(tab=="cards"&&HP.n!==undefined)startCards(+HP.n);
