@@ -66,9 +66,9 @@ if(!TABS[tab])tab="plan";
 const DL=window.DAYLINKS||{};const EPF=n=>EPS.find(e=>e.file=="ep"+n+".mp3");
 function nav(){$("#nav").innerHTML=Object.entries(TABS).map(([k,v])=>`<button class="${k==tab?'on':''}" onclick="go('${k}')">${v}</button>`).join("");
   const d=Math.ceil((new Date(S.exam)-new Date(today()))/864e5);
-  $("#cd").innerHTML=(tok()?`<span id="syncst" class="small">${lastSync?"✓ "+esc(lastSync.slice(-8,-3)):"Sync an"}</span><br>`:"")+`Prüfung ${new Date(S.exam).toLocaleDateString("de-DE")}<br><b>${d>=0?d+" Tage":"vorbei"}</b>`}
+  $("#cd").innerHTML=`<button id="wakebtn" onclick="wakeToggle()" style="background:none;border:0;font:inherit;font-size:12px;cursor:pointer;padding:0"></button><br>`+(tok()?`<span id="syncst" class="small">${lastSync?"✓ "+esc(lastSync.slice(-8,-3)):"Sync an"}</span><br>`:"")+`Prüfung ${new Date(S.exam).toLocaleDateString("de-DE")}<br><b>${d>=0?d+" Tage":"vorbei"}</b>`}
 function go(t){tab=t;location.hash=t;clearInterval(window._tm);render()}
-function render(){nav();({plan,vid,quiz,exam,cards,pod,weak,stats})[tab]()}
+function render(){nav();setTimeout(wakeBadge,0);({plan,vid,quiz,exam,cards,pod,weak,stats})[tab]()}
 
 /* ---------- stats helpers ---------- */
 function qStats(filter=()=>true){let n=0,c=0,seen=0;QB.filter(filter).forEach(q=>{const s=S.qs[q.id];if(s){seen++;n+=s.n;c+=s.c}});return{seen,acc:n?Math.round(100*c/n):0,total:QB.filter(filter).length}}
@@ -219,6 +219,16 @@ function weak(){const w=QB.filter(q=>S.qs[q.id]&&S.qs[q.id].last===false);const 
   $("#main").innerHTML=`<div class="card"><h2>Schwächste Themen</h2>${rows.length?`<table>${rows.map(([t,v,p])=>`<tr><td><span class="d${v.d}">D${v.d}</span> ${esc(t)}</td><td style="width:50%"><div class="bar"><i style="width:${p}%;background:${p<60?'var(--bad)':p<80?'var(--acc)':'var(--ok)'}"></i></div></td><td>${p} %</td></tr>`).join("")}</table>`:'<p class="mut">Noch keine Daten.</p>'}</div>
    <div class="card"><h2>Zuletzt falsch: ${w.length} Fragen</h2><button class="btn" ${w.length?'':'disabled'} onclick="Z={mode:'quiz',list:shuffle(QB.filter(q=>S.qs[q.id]&&S.qs[q.id].last===false)).map(q=>({q,order:shuffle(q.options.map((_,i)=>i))})),i:0,sel:[],done:false,ok:0};tab='quiz';location.hash='quiz';nav();quizQ()">Alle wiederholen</button></div>`}
 
+/* ---------- Bildschirm anlassen (Screen Wake Lock) ---------- */
+let wakeLock=null;
+const wakeOn=()=>localStorage.getItem("saa_wake")!=="0";
+async function wakeAcquire(){if(!wakeOn()||!("wakeLock" in navigator)||document.hidden)return;try{if(!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>{wakeLock=null;wakeBadge()})}}catch(e){}wakeBadge()}
+function wakeToggle(){localStorage.setItem("saa_wake",wakeOn()?"0":"1");if(!wakeOn()&&wakeLock){wakeLock.release();wakeLock=null}else wakeAcquire();wakeBadge()}
+function wakeBadge(){const b=document.getElementById("wakebtn");if(!b)return;const sup="wakeLock" in navigator;
+  b.textContent=!sup?"☀ (nicht unterstützt)":wakeOn()?(wakeLock?"☀ Bildschirm bleibt an":"☀ an (tippen)"):"☾ Bildschirm-Sperre normal";b.style.color=wakeOn()&&wakeLock?"var(--acc)":"var(--mut)"}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)wakeAcquire()});
+["click","touchend"].forEach(ev=>document.addEventListener(ev,()=>{if(wakeOn()&&!wakeLock)wakeAcquire()},{passive:true}));
+
 /* ---------- SYNC (privates GitHub Gist) ---------- */
 const GH="https://api.github.com",GDESC="saa-prep-progress",GFILE="saa-progress.json";
 let syncT=null,syncing=false,lastSync=localStorage.getItem("saa_last")||"";
@@ -259,6 +269,7 @@ function stats(){$("#main").innerHTML=syncCard()+`<div class="card"><h2>Fortschr
    <input type="file" onchange="this.files[0].text().then(t=>{Object.assign(S,JSON.parse(t));save();render()})"></div>`}
 render();
 if(tok())setTimeout(syncNow,300);
+wakeAcquire();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncSoon()});
 // Deep-Links aus dem Kalender: #quiz?d=1&n=20 · #cards?n=20 · #exam?start=1 · #pod?ep=03
 if(tab=="quiz"&&Object.keys(HP).length)startQuiz(HP);
