@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAA-C03 in 4 Wochen</title>
+<style>
+:root{--bg:#0f1720;--panel:#17212d;--panel2:#1e2a38;--txt:#e6edf3;--mut:#8b9bb0;--acc:#ff9900;--ok:#2ea043;--bad:#e5534b;--line:#2a3a4d;--d1:#58a6ff;--d2:#a371f7;--d3:#3fb950;--d4:#ff9900}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--txt)}
+header{display:flex;align-items:center;gap:20px;padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;white-space:nowrap}header h1 b{color:var(--acc)}
+nav{display:flex;gap:4px;flex-wrap:wrap}nav button{background:none;border:0;color:var(--mut);padding:8px 14px;border-radius:6px;cursor:pointer;font:inherit}
+nav button.on,nav button:hover{background:var(--panel2);color:var(--txt)}
+.cd{margin-left:auto;text-align:right;font-size:13px;color:var(--mut)}.cd b{font-size:20px;color:var(--acc)}
+main{max-width:1100px;margin:0 auto;padding:24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.kpi .v{font-size:28px;font-weight:600}.kpi .l{color:var(--mut);font-size:13px}
+.bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+h2{font-size:17px;margin:0 0 12px}h3{font-size:15px;margin:14px 0 6px;color:var(--mut)}
+.week{border-left:3px solid var(--line);padding-left:14px;margin-bottom:18px}.week.now{border-color:var(--acc)}
+.day{margin:8px 0}.day .dt{font-size:13px;color:var(--mut)}.day.today .dt{color:var(--acc);font-weight:600}
+label.task{display:flex;gap:8px;align-items:flex-start;padding:3px 0;cursor:pointer}label.task.done span{color:var(--mut);text-decoration:line-through}
+.btn{background:var(--acc);color:#111;border:0;padding:9px 16px;border-radius:6px;font:inherit;font-weight:600;cursor:pointer}
+.btn.sec{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}.btn:disabled{opacity:.4;cursor:default}
+select,input[type=date],input[type=number]{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:7px;font:inherit}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.q{font-size:16px;margin-bottom:14px;white-space:pre-wrap}.opt{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:11px 14px;border-radius:8px;margin:7px 0;cursor:pointer;font:inherit}
+.opt.sel{border-color:var(--acc)}.opt.ok{border-color:var(--ok);background:#12301c}.opt.bad{border-color:var(--bad);background:#3a1717}
+.exp{margin-top:12px;padding:12px;border-radius:8px;background:#102030;border:1px solid var(--line)}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:10px;background:var(--panel2);color:var(--mut);margin-right:6px}
+.d1{color:var(--d1)}.d2{color:var(--d2)}.d3{color:var(--d3)}.d4{color:var(--d4)}
+.flash{min-height:180px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:18px;cursor:pointer;padding:30px;white-space:pre-wrap}
+.ep{display:flex;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.ep audio{flex:1;min-width:240px}
+.mut{color:var(--mut)}.small{font-size:13px}table{width:100%;border-collapse:collapse}td,th{padding:6px;border-bottom:1px solid var(--line);text-align:left}
+.nav-q{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}.nav-q span{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;border-radius:4px;background:var(--panel2);cursor:pointer}
+.nav-q span.a{background:#2b3f55}.nav-q span.f{outline:2px solid var(--acc)}.nav-q span.c{outline:2px solid #fff}
+a{color:var(--d1)}
+</style>
+</head>
+<body>
+<header>
+  <h1>SAA-C03 <b>in 4 Wochen</b></h1>
+  <nav id="nav"></nav>
+  <div class="cd" id="cd"></div>
+</header>
+<main id="main"></main>
+<script src="data/plan.js"></script>
+<script src="data/q_d1d2.js"></script>
+<script src="data/q_d3d4.js"></script>
+<script src="data/cards.js"></script>
+<script src="data/podcast.js"></script>
+<script src="data/daylinks.js"></script>
+<script src="data/courses.js"></script>
+<script>
+const QB = window.QB||[], CARDS = window.CARDS||[], EPS = window.EPISODES||[];
+const DN = {1:"Secure",2:"Resilient",3:"High-Performing",4:"Cost-Optimized"}, DW={1:30,2:26,3:24,4:20};
+const S = Object.assign({exam:"2026-12-19",tasks:{},qs:{},cards:{},exams:[],eps:{},vids:{},admin:{}}, JSON.parse(localStorage.getItem("saa")||"{}"));
+const save=()=>localStorage.setItem("saa",JSON.stringify(S));
+const today=()=>new Date().toISOString().slice(0,10);
+const $=s=>document.querySelector(s), esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"})[c]);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const TABS={plan:"Plan",vid:"Videos & Kurse",quiz:"Üben",exam:"Prüfung",cards:"Karteikarten",pod:"Podcast",weak:"Schwachstellen",stats:"Fortschritt"};
+const H0=location.hash.slice(1).split("?");let tab=H0[0]||"plan";const HP=Object.fromEntries(new URLSearchParams(H0[1]||""));
+if(!TABS[tab])tab="plan";
+const DL=window.DAYLINKS||{};const EPF=n=>EPS.find(e=>e.file=="ep"+n+".mp3");
+function nav(){$("#nav").innerHTML=Object.entries(TABS).map(([k,v])=>`<button class="${k==tab?'on':''}" onclick="go('${k}')">${v}</button>`).join("");
+  const d=Math.ceil((new Date(S.exam)-new Date(today()))/864e5);
+  $("#cd").innerHTML=`Prüfung ${new Date(S.exam).toLocaleDateString("de-DE")}<br><b>${d>=0?d+" Tage":"vorbei"}</b>`}
+function go(t){tab=t;location.hash=t;clearInterval(window._tm);render()}
+function render(){nav();({plan,vid,quiz,exam,cards,pod,weak,stats})[tab]()}
+
+/* ---------- stats helpers ---------- */
+function qStats(filter=()=>true){let n=0,c=0,seen=0;QB.filter(filter).forEach(q=>{const s=S.qs[q.id];if(s){seen++;n+=s.n;c+=s.c}});return{seen,acc:n?Math.round(100*c/n):0,total:QB.filter(filter).length}}
+function readiness(){const last=S.exams.slice(-2).map(e=>e.pct);const ex=last.length?last.reduce((a,b)=>a+b)/last.length:0;
+  let w=0;for(const d of [1,2,3,4]){const s=qStats(q=>q.domain==d);w+=DW[d]*(s.total?s.seen/s.total:0)*s.acc/100}
+  return Math.round(last.length?0.6*ex+0.4*w:w)}
+
+/* ---------- PLAN ---------- */
+function plan(){const all=PLAN.flatMap(w=>w.days.flatMap(d=>d.tasks));const done=all.filter(t=>S.tasks[t[0]]).length;const t=today();
+  let h=`<div class="grid">
+   <div class="card kpi"><div class="v">${done}/${all.length}</div><div class="l">Plan-Aufgaben erledigt</div><div class="bar"><i style="width:${100*done/all.length}%"></i></div></div>
+   <div class="card kpi"><div class="v">${readiness()} %</div><div class="l">Readiness-Score (Ziel ≥ 80 %)</div><div class="bar"><i style="width:${readiness()}%"></i></div></div>
+   <div class="card kpi"><div class="v">${qStats().seen}/${QB.length}</div><div class="l">Fragen bearbeitet · Trefferquote ${qStats().acc} %</div></div>
+   <div class="card kpi"><div class="l">Prüfungstermin</div><input type="date" value="${S.exam}" onchange="S.exam=this.value;save();render()"><div class="l small">Nach der Buchung bei Pearson VUE eintragen</div></div></div>`;
+  h+=nextUp()+adminCard();
+  for(const w of PLAN){const now=t>=w.from&&t<=w.to;h+=`<div class="card week ${now?'now':''}"><h2>Woche ${w.week}: ${w.title}</h2><div class="mut small">${fmt(w.from)} – ${fmt(w.to)}</div>`;
+    for(const d of w.days){h+=`<div class="day ${d.date==t?'today':''}"><div class="dt">${new Date(d.date).toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"})}${d.date==t?' · HEUTE':''}</div>`+
+      d.tasks.map(([id,txt])=>`<label class="task ${S.tasks[id]?'done':''}"><input type="checkbox" ${S.tasks[id]?'checked':''} onchange="S.tasks['${id}']=this.checked;save();render()"><span>${esc(txt)}</span></label>`).join("")+dayLinks(d.date)+`</div>`}
+    h+=`</div>`}
+  h+=`<div class="card"><h2>Offizielle Ressourcen</h2>${RESOURCES.map(r=>`<div><a href="${r[1]}" target="_blank">${r[0]}</a></div>`).join("")}</div>`;
+  $("#main").innerHTML=h}
+function dayLinks(date){const x=DL[date];if(!x)return"";const b=[];
+  [x.ep,x.ep2].filter(Boolean).forEach(n=>{const e=EPF(n);if(e)b.push(`<a href="#pod?ep=${n}" onclick="setTimeout(()=>location.reload(),0)">🎧 ${esc(e.title)}</a>`)});
+  x.app.forEach(([l,h])=>b.push(`<a href="#${h}" onclick="setTimeout(()=>location.reload(),0)">▶ ${esc(l)}</a>`));
+  x.links.forEach(([l,u])=>b.push(`<a href="${u}" target="_blank">↗ ${esc(l)}</a>`));
+  return b.length?`<div class="small" style="display:flex;flex-wrap:wrap;gap:6px 16px;margin:4px 0 0 26px">${b.join("")}</div>`:""}
+const COURSES=window.COURSES||[];
+const ADMIN=[["esl","ESL +30 beantragen (VOR der Buchung!)","https://www.aws.training/certification"],
+ ["vou","Kostenlosen 100%-Voucher holen (Amazon-Benefits, Link im Kalender)","https://aws.amazon.com/certification/"],
+ ["sb","Skill Builder: mit deiner @amazon.com-Adresse + Firmen-SSO einloggen und Exam Prep Plan einschreiben","https://skillbuilder.aws/learning-plan/UYRXS2DF85/exam-prep-plan-aws-certified-solutions-architect--associate-saac03--english/U991QUF9C3"],
+ ["book","Sa 05.12.: Go/No-Go – Prüfung buchen (persönliches Konto, Voucher-Code) und Datum oben eintragen","https://www.aws.training/certification"],
+ ["onvue","OnVUE-Systemcheck auf dem Prüfungsrechner","https://home.pearsonvue.com/aws/onvue"]];
+function adminCard(){const open=ADMIN.filter(a=>!S.admin[a[0]]);if(!open.length)return"";
+  return `<div class="card" style="border-color:var(--acc)"><h2>Organisatorisch (${ADMIN.length-open.length}/${ADMIN.length})</h2>`+ADMIN.map(([id,l,u])=>`<label class="task ${S.admin[id]?'done':''}"><input type="checkbox" ${S.admin[id]?'checked':''} onchange="S.admin['${id}']=this.checked;save();render()"><span>${esc(l)} · <a href="${u}" target="_blank">öffnen ↗</a></span></label>`).join("")+`</div>`}
+function nextUp(){const t=today();const days=PLAN.flatMap(w=>w.days.map(d=>({...d,w})));
+  let d=days.find(x=>x.date>=t&&x.tasks.some(k=>!S.tasks[k[0]]))||days.find(x=>x.tasks.some(k=>!S.tasks[k[0]]));
+  const behind=days.filter(x=>x.date<t&&x.tasks.some(k=>!S.tasks[k[0]])).length;
+  if(!d)return `<div class="card"><h2>Alles erledigt 🎉</h2></div>`;
+  const x=DL[d.date]||{app:[],links:[]};const label=d.date==t?"HEUTE":d.date>t?"ALS NÄCHSTES – "+new Date(d.date).toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"}):"NACHHOLEN";
+  const ep=[x.ep,x.ep2].filter(Boolean).map(EPF).filter(Boolean);
+  const vids=COURSES.filter(c=>c.day==d.date);
+  return `<div class="card" style="border:2px solid var(--acc)"><div class="mut small">${label}${behind?` · <span style="color:var(--bad)">${behind} Tag(e) mit offenen Aufgaben</span>`:''}</div><h2 style="margin-top:4px">Woche ${d.w.week}: ${esc(d.w.title)}</h2>
+   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+   <div><h3>1 · Aufgaben</h3>${d.tasks.map(([id,txt])=>`<label class="task ${S.tasks[id]?'done':''}"><input type="checkbox" ${S.tasks[id]?'checked':''} onchange="S.tasks['${id}']=this.checked;save();render()"><span>${esc(txt)}</span></label>`).join("")}
+     ${ep.map(e=>`<h3>🎧 ${esc(e.title)}</h3><audio controls preload="none" style="width:100%" src="podcast/audio/${e.file}"></audio>`).join("")}</div>
+   <div><h3>2 · Videos & Kurse</h3>${vids.length?vids.map(vidRow).join(""):'<p class="mut small">Heute keine.</p>'}
+     ${x.app.length?`<h3>3 · Üben in der App</h3>`+x.app.map(([l,h])=>`<a class="btn" style="display:inline-block;margin:3px 6px 3px 0;text-decoration:none" href="#${h}" onclick="setTimeout(()=>location.reload(),0)">▶ ${esc(l)}</a>`).join(""):''}</div></div></div>`}
+function vidRow(c){return `<label class="task ${S.vids[c.id]?'done':''}"><input type="checkbox" ${S.vids[c.id]?'checked':''} onchange="S.vids['${c.id}']=this.checked;save();render()"><span><span class="tag">${c.src=="YouTube"?"▶ YouTube":"Skill Builder"}</span>${c.abo?'<span class="tag" title="kostenlos mit Mitarbeiter-Login">Abo</span>':''}${c.opt?'<span class="tag">optional</span>':''}<a href="${c.url}" target="_blank">${esc(c.title.replace(/ \[Abo\]/,''))}</a> <span class="mut small">${esc(c.dur||'')}</span></span></label>`}
+function vid(){const groups=[[0,"Start, Prüfungstraining & Abschluss"],[1,"Domain 1 – Secure"],[2,"Domain 2 – Resilient"],[3,"Domain 3 – High-Performing"],[4,"Domain 4 – Cost-Optimized"]];
+  const done=COURSES.filter(c=>S.vids[c.id]).length;const core=COURSES.filter(c=>!c.opt);const coreDone=core.filter(c=>S.vids[c.id]).length;
+  let h=`<div class="grid"><div class="card kpi"><div class="v">${coreDone}/${core.length}</div><div class="l">Pflicht-Inhalte erledigt</div><div class="bar"><i style="width:${100*coreDone/core.length}%"></i></div></div>
+   <div class="card kpi"><div class="v">${done}/${COURSES.length}</div><div class="l">inkl. optionaler Videos</div></div>
+   <div class="card"><div class="small">Skill Builder <b>[Abo]</b>-Inhalte sind gratis mit Login <b>deiner @amazon.com-Adresse → Firmen-SSO</b> (nicht „Login with Amazon“). Fortschritt dort: „My learning“.</div></div></div>`;
+  const yt=COURSES.filter(c=>c.src=="YouTube"),sb=COURSES.filter(c=>c.src!="YouTube");
+  h+=`<div class="card"><h2>Skill Builder (offizielle Prüfungsvorbereitung)</h2>`+groups.map(([g,n])=>{const l=sb.filter(c=>c.domain==g);return l.length?`<h3>${n}</h3>`+l.map(c=>vidRow(c)+`<div class="mut small" style="margin:-4px 0 4px 26px">geplant: ${fmt(c.day)}</div>`).join(""):""}).join("")+`</div>`;
+  h+=`<div class="card"><h2>Offizielle AWS-Videos (YouTube, ohne Login, gut am Handy)</h2>`+yt.map(c=>vidRow(c)+`<div class="mut small" style="margin:-4px 0 4px 26px">geplant: ${fmt(c.day)}</div>`).join("")+`</div>`;
+  $("#main").innerHTML=h}
+
+const fmt=d=>new Date(d).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
+
+/* ---------- QUIZ ---------- */
+let Z=null;
+function quiz(){if(!Z||Z.mode!="quiz")return quizSetup();quizQ()}
+function quizSetup(){const topics=[...new Set(QB.map(q=>q.topic))].sort();
+  $("#main").innerHTML=`<div class="card"><h2>Üben mit sofortigem Feedback</h2><div class="row">
+   <select id="qd"><option value="0">Alle Domänen</option>${[1,2,3,4].map(d=>`<option value="${d}">D${d} ${DN[d]} (${qStats(q=>q.domain==d).seen}/${QB.filter(q=>q.domain==d).length})</option>`).join("")}</select>
+   <select id="qt"><option value="">Alle Themen</option>${topics.map(t=>`<option>${esc(t)}</option>`).join("")}</select>
+   <select id="qm"><option value="new">Neue zuerst</option><option value="rand">Zufällig</option><option value="wrong">Nur falsch beantwortete</option></select>
+   <input type="number" id="qn" value="20" min="5" max="100" style="width:80px">
+   <button class="btn" onclick="startQuiz()">Start</button></div>
+   <p class="mut small">${QB.length} Fragen im Pool. Fragen auf Englisch wie in der Prüfung, Erklärungen auf Deutsch.</p></div>`}
+function startQuiz(o){o=o||{d:+$("#qd").value,t:$("#qt").value,m:$("#qm").value,n:+$("#qn").value,exact:true};const d=+o.d||0,t=o.t||"",m=o.m||"new",n=+o.n||20;
+  let p=QB.filter(q=>(!d||q.domain==d)&&(!t||(o.exact?q.topic==t:q.topic.includes(t))));
+  if(m=="wrong")p=p.filter(q=>S.qs[q.id]&&S.qs[q.id].last===false);
+  p=shuffle(p);if(m=="new")p.sort((a,b)=>(S.qs[a.id]?1:0)-(S.qs[b.id]?1:0));
+  p=p.slice(0,n);if(!p.length)return alert("Keine passenden Fragen.");
+  Z={mode:"quiz",list:p.map(q=>({q,order:shuffle(q.options.map((_,i)=>i))})),i:0,sel:[],done:false,ok:0};quizQ()}
+function record(q,ok){const s=S.qs[q.id]||{n:0,c:0};s.n++;if(ok)s.c++;s.last=ok;S.qs[q.id]=s;save()}
+function same(a,b){return a.length==b.length&&a.every(x=>b.includes(x))}
+function qHtml(it,sel,reveal){const q=it.q;return `<div><span class="tag d${q.domain}">D${q.domain} ${DN[q.domain]}</span><span class="tag">${esc(q.topic)}</span>${q.multi?'<span class="tag" style="color:var(--acc)">Choose TWO</span>':''}</div>
+  <div class="q" style="margin-top:10px">${esc(q.q)}</div>`+it.order.map(i=>{let c=sel.includes(i)?'sel':'';if(reveal){if(q.answer.includes(i))c='ok';else if(sel.includes(i))c='bad'}
+  return `<button class="opt ${c}" onclick="pick(${i})">${esc(q.options[i])}</button>`}).join("")+(reveal?`<div class="exp">${esc(q.explain)}</div>`:"")}
+function pick(i){const z=Z;if(z.done)return;const it=z.list[z.i];const max=it.q.multi?2:1;
+  if(z.sel.includes(i))z.sel=z.sel.filter(x=>x!=i);else{z.sel.push(i);if(z.sel.length>max)z.sel.shift()}
+  if(z.mode=="exam"){z.ans[z.i]=z.sel.slice();save();examQ()}else quizQ()}
+function quizQ(){const z=Z,it=z.list[z.i];
+  $("#main").innerHTML=`<div class="card"><div class="row mut small"><span>Frage ${z.i+1}/${z.list.length}</span><span>· richtig ${z.ok}</span><button class="btn sec" style="margin-left:auto" onclick="Z=null;quiz()">Abbrechen</button></div>
+   <div class="bar" style="margin:8px 0 14px"><i style="width:${100*z.i/z.list.length}%"></i></div>${qHtml(it,z.sel,z.done)}
+   <div class="row" style="margin-top:14px">${z.done?`<button class="btn" onclick="nextQ()">${z.i+1<z.list.length?'Weiter →':'Auswertung'}</button>`:`<button class="btn" ${z.sel.length?'':'disabled'} onclick="check()">Prüfen</button>`}</div></div>`}
+function check(){const z=Z,q=z.list[z.i].q,ok=same(z.sel,q.answer);z.done=true;if(ok)z.ok++;record(q,ok);quizQ()}
+function nextQ(){const z=Z;if(z.i+1>=z.list.length){const pct=Math.round(100*z.ok/z.list.length);Z=null;
+  $("#main").innerHTML=`<div class="card"><h2>Ergebnis: ${pct} %</h2><p>${z.ok} von ${z.list.length} richtig.</p><button class="btn" onclick="quiz()">Neue Runde</button> <button class="btn sec" onclick="go('weak')">Schwachstellen</button></div>`;return}
+  z.i++;z.sel=[];z.done=false;quizQ()}
+
+/* ---------- EXAM ---------- */
+let E=null;
+function exam(){if(E&&!E.fin)return examQ();
+  const hist=S.exams.slice().reverse().map(e=>`<tr><td>${new Date(e.t).toLocaleString("de-DE")}</td><td><b>${e.pct} %</b></td><td>${e.scaled}</td><td>${e.pass?'<span style="color:var(--ok)">bestanden</span>':'<span style="color:var(--bad)">nicht bestanden</span>'}</td><td class="small mut">${[1,2,3,4].map(d=>'D'+d+' '+e.dom[d]+'%').join(' · ')}</td></tr>`).join("");
+  $("#main").innerHTML=`<div class="card"><h2>Prüfungssimulation</h2><p>65 Fragen, gewichtet nach Domänen (30/26/24/20 %), 130 Minuten, Fragen markieren und am Ende reviewen, Auswertung erst ganz am Schluss – wie bei Pearson VUE.</p>
+   <p class="mut small">Bestehensgrenze real: 720/1000 (skaliert). Hier vereinfacht: Skala 100–1000 linear; Ziel in der Simulation ≥ 80 % für einen sicheren Puffer.</p>
+   <label class="row small" style="margin-bottom:10px"><input type="checkbox" ${S.esl?'checked':''} onchange="S.esl=this.checked;save()"> ESL +30 (160 statt 130 min) – nur aktivieren, wenn bewilligt. Trainingsempfehlung: trotzdem mit 130 min üben.</label>
+   <button class="btn" onclick="startExam()" ${QB.length<65?'disabled':''}>Prüfung starten</button></div>
+   ${hist?`<div class="card"><h2>Bisherige Simulationen</h2><table><tr><th>Datum</th><th>Score</th><th>Skaliert</th><th></th><th>Domänen</th></tr>${hist}</table></div>`:''}`}
+function startExam(){const per={1:20,2:17,3:15,4:13};let l=[];for(const d of [1,2,3,4]){const pool=QB.filter(q=>q.domain==d);
+   const sorted=shuffle(pool).sort((a,b)=>((S.qs[a.id]||{n:0}).n)-((S.qs[b.id]||{n:0}).n));l=l.concat(sorted.slice(0,per[d]))}
+  l=shuffle(l);E={mode:"exam",list:l.map(q=>({q,order:shuffle(q.options.map((_,i)=>i))})),i:0,ans:{},flag:{},end:Date.now()+(S.esl?160:130)*60e3,fin:false};Z=E;E.sel=[];examQ()}
+function examQ(){const e=E;Z=e;e.sel=e.ans[e.i]||[];const it=e.list[e.i];
+  $("#main").innerHTML=`<div class="card"><div class="row"><b id="tmr"></b><span class="mut small">Frage ${e.i+1}/65 · beantwortet ${Object.values(e.ans).filter(a=>a.length).length}</span>
+   <label class="row small" style="margin-left:auto"><input type="checkbox" ${e.flag[e.i]?'checked':''} onchange="E.flag[E.i]=this.checked;examQ()"> für Review markieren</label></div><hr style="border-color:var(--line)">
+   ${qHtml(it,e.sel,false)}<div class="row" style="margin-top:14px"><button class="btn sec" ${e.i?'':'disabled'} onclick="E.i--;examQ()">← Zurück</button><button class="btn sec" ${e.i<64?'':'disabled'} onclick="E.i++;examQ()">Weiter →</button>
+   <button class="btn" style="margin-left:auto" onclick="if(confirm('Prüfung abgeben?'))finishExam()">Abgeben</button></div>
+   <div class="nav-q">${e.list.map((_,k)=>`<span class="${(e.ans[k]||[]).length?'a':''} ${e.flag[k]?'f':''} ${k==e.i?'c':''}" onclick="E.i=${k};examQ()">${k+1}</span>`).join("")}</div></div>`;
+  clearInterval(window._tm);const tick=()=>{const r=e.end-Date.now();if(r<=0){clearInterval(window._tm);finishExam();return}const el=$("#tmr");if(el)el.textContent=`⏱ ${Math.floor(r/6e4)}:${String(Math.floor(r/1e3)%60).padStart(2,"0")}`;};tick();window._tm=setInterval(tick,1000)}
+function finishExam(){const e=E;clearInterval(window._tm);e.fin=true;let ok=0;const dom={1:[0,0],2:[0,0],3:[0,0],4:[0,0]};
+  e.list.forEach((it,k)=>{const r=same(e.ans[k]||[],it.q.answer);if(r)ok++;dom[it.q.domain][0]+=r?1:0;dom[it.q.domain][1]++;record(it.q,r)});
+  const pct=Math.round(100*ok/65),scaled=Math.round(100+900*ok/65);const dp={};for(const d in dom)dp[d]=Math.round(100*dom[d][0]/dom[d][1]);
+  S.exams.push({t:Date.now(),pct,scaled,pass:scaled>=720,dom:dp});save();
+  $("#main").innerHTML=`<div class="card"><h2>${scaled>=720?'Bestanden':'Nicht bestanden'} – ${pct} % (${scaled}/1000)</h2>
+   <div class="grid">${[1,2,3,4].map(d=>`<div class="kpi"><div class="v d${d}">${dp[d]} %</div><div class="l">D${d} ${DN[d]}</div></div>`).join("")}</div>
+   <h3>Review</h3>${e.list.map((it,k)=>{const r=same(e.ans[k]||[],it.q.answer);return r?'':`<div class="card" style="background:var(--panel2)">${qHtml(it,e.ans[k]||[],true)}</div>`}).join("")}
+   <button class="btn" onclick="E=null;exam()">Fertig</button></div>`}
+
+/* ---------- FLASHCARDS (Leitner) ---------- */
+const BOX=[0,1,2,4,8,16];let F=null;
+function due(){const t=today();return CARDS.filter(c=>{const s=S.cards[c.id];return s&&s.due<=t})}
+function cards(){if(!CARDS.length){$("#main").innerHTML=`<div class="card">Karteikarten werden noch erzeugt …</div>`;return}
+  if(!F){const d=due(),fresh=CARDS.filter(c=>!S.cards[c.id]);
+   $("#main").innerHTML=`<div class="card"><h2>Karteikarten (Spaced Repetition)</h2><p>${d.length} fällig · ${fresh.length} neu · ${CARDS.length-fresh.length} in Rotation</p>
+    <div class="row"><button class="btn" onclick="startCards(20)">Fällige + 20 neue</button><button class="btn sec" onclick="startCards(0)">Nur fällige</button>
+    <select id="cd1"><option value="0">alle Domänen</option>${[1,2,3,4].map(x=>`<option value="${x}">D${x}</option>`).join("")}</select></div></div>`;return}
+  const c=F.list[F.i];$("#main").innerHTML=`<div class="card"><div class="row mut small"><span>${F.i+1}/${F.list.length}</span><span class="tag d${c.domain}">D${c.domain}</span><span class="tag">${esc(c.topic)}</span><button class="btn sec" style="margin-left:auto" onclick="F=null;cards()">Beenden</button></div>
+   <div class="flash" onclick="F.show=true;cards()">${esc(F.show?c.back:c.front)}</div>
+   ${F.show?`<div class="row" style="justify-content:center"><button class="btn sec" onclick="rate(0)">Nicht gewusst</button><button class="btn sec" onclick="rate(1)">Unsicher</button><button class="btn" onclick="rate(2)">Gewusst</button></div>`:`<p class="mut small" style="text-align:center">Klicken zum Umdrehen (Leertaste)</p>`}</div>`}
+function startCards(n){const el=$("#cd1"),dm=el?+el.value:0;const f=c=>!dm||c.domain==dm;let l=due().filter(f).concat(shuffle(CARDS.filter(c=>!S.cards[c.id]&&f(c))).slice(0,n));if(!l.length)return alert("Nichts fällig 🎉");F={list:shuffle(l),i:0,show:false};cards()}
+function rate(r){const c=F.list[F.i];const s=S.cards[c.id]||{box:0};s.box=r==0?0:r==1?Math.max(1,s.box):Math.min(5,s.box+1);
+  const d=new Date();d.setDate(d.getDate()+BOX[s.box]);s.due=d.toISOString().slice(0,10);S.cards[c.id]=s;save();
+  if(r==0)F.list.push(c);F.i++;F.show=false;if(F.i>=F.list.length){F=null;alert("Runde fertig.")}cards()}
+document.addEventListener("keydown",ev=>{if(tab=="cards"&&F&&ev.code=="Space"){ev.preventDefault();F.show=true;cards()}});
+
+/* ---------- PODCAST ---------- */
+function pod(){$("#main").innerHTML=`<div class="card"><h2>Podcast „SAA in 4 Wochen“</h2><p class="mut small">MP3s liegen in <code>podcast/audio/</code> – auch aufs Handy kopierbar (OneDrive). Wiedergabegeschwindigkeit wählbar.</p>
+  <div class="row small">Tempo <select onchange="document.querySelectorAll('audio').forEach(a=>a.playbackRate=+this.value)">${[0.9,1,1.15,1.25,1.5].map(v=>`<option ${v==1?'selected':''}>${v}</option>`).join("")}</select></div>
+  ${EPS.length?EPS.map(e=>`<div class="ep" id="${e.file.replace('.mp3','')}"><input type="checkbox" title="gehört" ${S.eps[e.file]?'checked':''} onchange="S.eps['${e.file}']=this.checked;save()"><div style="width:330px"><b>${esc(e.title)}</b><div class="mut small">${e.min} min</div></div><audio controls preload="none" src="podcast/audio/${e.file}"></audio></div>`).join(""):'<p>Audio wird noch erzeugt …</p>'}</div>`}
+
+/* ---------- WEAK ---------- */
+function weak(){const w=QB.filter(q=>S.qs[q.id]&&S.qs[q.id].last===false);const byT={};QB.forEach(q=>{const s=S.qs[q.id];if(!s)return;const t=byT[q.topic]||(byT[q.topic]={n:0,c:0,d:q.domain});t.n+=s.n;t.c+=s.c});
+  const rows=Object.entries(byT).map(([t,v])=>[t,v,Math.round(100*v.c/v.n)]).sort((a,b)=>a[2]-b[2]).slice(0,12);
+  $("#main").innerHTML=`<div class="card"><h2>Schwächste Themen</h2>${rows.length?`<table>${rows.map(([t,v,p])=>`<tr><td><span class="d${v.d}">D${v.d}</span> ${esc(t)}</td><td style="width:50%"><div class="bar"><i style="width:${p}%;background:${p<60?'var(--bad)':p<80?'var(--acc)':'var(--ok)'}"></i></div></td><td>${p} %</td></tr>`).join("")}</table>`:'<p class="mut">Noch keine Daten.</p>'}</div>
+   <div class="card"><h2>Zuletzt falsch: ${w.length} Fragen</h2><button class="btn" ${w.length?'':'disabled'} onclick="Z={mode:'quiz',list:shuffle(QB.filter(q=>S.qs[q.id]&&S.qs[q.id].last===false)).map(q=>({q,order:shuffle(q.options.map((_,i)=>i))})),i:0,sel:[],done:false,ok:0};tab='quiz';location.hash='quiz';nav();quizQ()">Alle wiederholen</button></div>`}
+
+/* ---------- STATS ---------- */
+function stats(){$("#main").innerHTML=`<div class="card"><h2>Fortschritt je Domäne</h2><table><tr><th>Domäne</th><th>Gewicht</th><th>Abdeckung</th><th>Trefferquote</th></tr>${[1,2,3,4].map(d=>{const s=qStats(q=>q.domain==d);
+   return `<tr><td class="d${d}">D${d} ${DN[d]}</td><td>${DW[d]} %</td><td>${s.seen}/${s.total}</td><td><div class="bar"><i style="width:${s.acc}%"></i></div>${s.acc} %</td></tr>`}).join("")}</table></div>
+   <div class="card"><h2>Daten</h2><p class="mut small">Fortschritt liegt im Browser (localStorage). Export/Import für Gerätewechsel:</p>
+   <button class="btn sec" onclick="const b=new Blob([JSON.stringify(S)]);const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='saa-progress.json';a.click()">Export</button>
+   <input type="file" onchange="this.files[0].text().then(t=>{Object.assign(S,JSON.parse(t));save();render()})"></div>`}
+render();
+// Deep-Links aus dem Kalender: #quiz?d=1&n=20 · #cards?n=20 · #exam?start=1 · #pod?ep=03
+if(tab=="quiz"&&Object.keys(HP).length)startQuiz(HP);
+if(tab=="cards"&&HP.n!==undefined)startCards(+HP.n);
+if(tab=="exam"&&HP.start)startExam();
+if(tab=="pod"&&HP.ep){const el=document.getElementById("ep"+HP.ep);if(el){el.scrollIntoView();el.style.background="var(--panel2)";el.querySelector("audio").play().catch(()=>{})}}
+</script>
+</body>
+</html>
