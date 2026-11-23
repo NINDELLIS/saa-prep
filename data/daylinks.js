@@ -71,7 +71,8 @@ window.DAYLINKS = {
     "Service Control Policies (SCPs)",
     "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html"
    ]
-  ]
+  ],
+  "ep2": "13"
  },
  "2026-11-25": {
   "ep": "03",
@@ -110,7 +111,8 @@ window.DAYLINKS = {
     "Hands-on: AWS Console (VPC Wizard)",
     "https://console.aws.amazon.com/vpc/"
    ]
-  ]
+  ],
+  "ep2": "14"
  },
  "2026-11-26": {
   "ep": "04",

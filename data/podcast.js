@@ -58,5 +58,15 @@ window.EPISODES = [
   "file": "ep12.mp3",
   "title": "Folge 12: Kostenoptimierung und die 25 wichtigsten Prüfungsfallen",
   "min": 11
+ },
+ {
+  "file": "ep13.mp3",
+  "title": "Folge 13: Bonus – die offiziellen Baseline-Fragen 1 bis 10 erklärt",
+  "min": 11
+ },
+ {
+  "file": "ep14.mp3",
+  "title": "Folge 14: Bonus – die offiziellen Baseline-Fragen 11 bis 20 erklärt",
+  "min": 11
  }
 ];
